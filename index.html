@@ -1,0 +1,156 @@
+<html>
+	<head>
+		<title>Angular Add Sample</title>
+		
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.5.6/angular.min.js"></script>
+		<script src="js/angular-file-upload.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+	</head>
+	<body>
+		<br><br>
+		<div class="container"  style="width: ;">
+			<h3 align="center">Angular with PHP</h3>
+			<div ng-app="myapp" ng-controller="userController" ng-init="displayData();">
+				<form method="post" ng-submit="insertData()">
+				<label>First Name</label>
+				<input type="text" name="first_name" ng-model="firstname" class="form-control">
+				<br>
+				<label>Last Name</label>
+				<input type="text" name="last_name" ng-model="lastname" class="form-control">
+				<label>E-mail</label>
+				<input type="email" name="email" ng-model="email" class="form-control">
+				<input type="hidden" ng-model="id">
+
+				
+                <br>
+                <div class="row">
+                 	<div class="col-md-2">
+                 		<input type="file" ng-model="upload_student_photo" ng-file-select="onImageSelect($files)" onclick="this.value=null" style="margin-top:5px" accept="image/*">
+                 	</div>
+                 	<div class="col-md-4">
+                 		<img ng-src="images/{{ image_src }}" class="image-responsive" style="width: 50px">
+                 	</div>
+                 </div> 
+				
+                          
+				<br>
+				<input type="submit" name="btnInsert" class="btn btn-info"
+				value="{{btnName}}">
+				</form>
+				<br>
+				<br>
+				<div class="table-responsive">
+					<table class="table table-bordered table-striped">
+						<tr>
+							<th>Image</th>
+							<th>First Name</th>
+							<th>Last Name</th>
+							<th>Email</th>
+							<th colspan="2" style="text-align: center;">Action</th>
+						</tr>
+						<tr ng-repeat="n in namesData">
+							<td><img src="images/{{n.image}}" style="width:50px;height: 50px;" alt=""></td>
+							<td>{{ n.first_name}}</td>
+							<td>{{ n.last_name}}</td>
+							<td>{{ n.email}}</td>
+							<td><button ng-click="updateData(n.id, n.first_name, n.last_name, n.email,n.image)"
+							class="btn btn-success">Update</button>
+							<button ng-click="deleteData(n.id)"
+							class="btn btn-danger">Delete</button></td>
+						</tr>
+					</table>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
+<script>
+	var app = angular.module("myapp", ['angularFileUpload']);
+	app.controller("userController", function($scope,$http,$upload){
+		$scope.btnName = "ADD";
+		$scope.displayData = function(){
+			$http.get("select.php")
+			.success(function(data){
+				$scope.namesData = data;
+			});
+		}
+
+		$scope.image_src = '';
+		$scope.insertData = function(){
+			if($scope.firstname == null){
+				alert("First name is required");
+			}
+			else if ($scope.lastname == null){
+				alert("Last name is required");
+			}else if ($scope.email == null){
+				alert("Email is required");
+			}
+			else
+			{
+				$http.post(
+					"insert.php",
+					{ 'firstname': $scope.firstname, 'lastname': $scope.lastname, 
+					  'email':$scope.email, 'btnName': $scope.btnName, 'id': $scope.id, 'image': $scope.image_src}
+					).success(function(data){
+						alert(data);
+						$scope.firstname= null;
+						$scope.lastname = null;
+						$scope.email = null;
+						$scope.image_src = '';
+						$scope.displayData();
+					});
+			}
+		}
+		$scope.updateData = function(id,first_name,last_name,email,image){
+			$scope.id = id;
+			$scope.firstname = first_name;
+			$scope.lastname = last_name;
+			$scope.email = email;
+			$scope.image_src = image;
+			$scope.btnName = "Update";
+		}
+		$scope.deleteData = function(id){
+			if (confirm("Are you sure to delete")) {
+				$http.post("delete.php", { 'id':id})
+				.success(function(data){
+					alert(data);
+					$scope.image_src = '';
+					$scope.displayData();
+				});
+			}
+			else{
+				return false;
+			}
+		}
+
+
+		/*image upload*/
+
+		$scope.onImageSelect = function ($files) {
+
+			console.log('image upload START');
+
+	        for (var i = 0; i < $files.length; i++) {
+	            var file = $files[i];
+	            $scope.imageLoading = true;
+	            console.log(file);
+	            $scope.upload = $upload.upload({
+	                url: 'upload_image.php',
+	                file: file,
+	                data: {
+	                    folder: 'images/',
+	                    image_name:'a'
+	                },
+
+	            }).progress(function (evt, data) {
+	            	alert(data);
+	                // $scope.progressFP = parseInt(100.0 * evt.loaded / evt.total);
+	            }).success(function (data, status, headers, config) {
+	                    $scope.image_src = data;
+	            });
+	        }
+	    };
+	});
+</script>
